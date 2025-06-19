@@ -1,0 +1,9 @@
+langchain
+langchain-community
+langchain-openai
+openai
+pinecone-client==2.2.4
+python-dotenv
+unstructured
+python-docx
+openpyxl
