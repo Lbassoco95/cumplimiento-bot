@@ -1,60 +1,60 @@
 import os
-from dotenv import load_dotenv
-import pinecone
-from langchain.document_loaders import UnstructuredWordDocumentLoader, UnstructuredExcelLoader
+from langchain_community.document_loaders import UnstructuredWordDocumentLoader, UnstructuredExcelLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone as PineconeStore
+import pinecone
 
-# Cargar variables de entorno
-load_dotenv()
+# 📦 Variables de entorno (ya configuradas en Railway)
 openai_api_key = os.environ["OPENAI_API_KEY"]
 pinecone_api_key = os.environ["PINECONE_API_KEY"]
 pinecone_env = os.environ["PINECONE_ENVIRONMENT"]
 index_name = os.environ["INDEX_NAME"]
 
-# Inicializar Pinecone
+# 🚀 Inicializar Pinecone
 pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 
-# Crear el índice si no existe
+# 🧠 Crear el índice si no existe
 if index_name not in pinecone.list_indexes():
     pinecone.create_index(index_name, dimension=1536, metric="cosine")
 
-# Ruta a documentos
+# 📂 Ruta donde Railway verá los archivos (ya están en el repo)
 base_dir = "tmp_docs"
+
+# 📄 Lista de documentos
 archivos = [
-    "Manual-de-Cumplimiento-VIZUM.docx",
-    "Metodología-PLD-FT-VIZUM.docx",
-    "Matriz-de-Riesgos-Clientes-VIZUM.xlsx",
-    "Metodología-EBR-VIZUM.xlsx"
+    "Manual de Cumplimiento - VIZUM.docx",
+    "Metodología PLD-FT - VIZUM.docx",
+    "Matriz de Riesgos Clientes - VIZUM.xlsx",
+    "Metodología EBR - VIZUM.xlsx"
 ]
 
-# Cargar documentos
+# 🧾 Cargar documentos
 docs = []
-for archivo in archivos:
-    path = os.path.join(base_dir, archivo)
-    print(f"📄 Procesando {archivo}...")
+for nombre in archivos:
+    path = os.path.join(base_dir, nombre)
+    print(f"📄 Procesando {nombre}...")
     try:
-        if archivo.endswith(".docx"):
+        if path.endswith(".docx"):
             loader = UnstructuredWordDocumentLoader(path)
-        elif archivo.endswith(".xlsx"):
+        elif path.endswith(".xlsx"):
             loader = UnstructuredExcelLoader(path)
         else:
-            print(f"❌ Tipo de archivo no soportado: {archivo}")
+            print(f"❌ Tipo de archivo no soportado: {nombre}")
             continue
         docs.extend(loader.load())
-        print(f"✅ Cargado: {archivo}")
+        print(f"✅ Cargado: {nombre}")
     except Exception as e:
-        print(f"❌ Error al cargar {archivo}: {e}")
+        print(f"❌ Error al cargar {nombre}: {e}")
 
 print(f"📄 Total de documentos cargados: {len(docs)}")
 
-# Separar en chunks
+# ✂️ Dividir en chunks
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
 chunks = text_splitter.split_documents(docs)
 print(f"📚 Total de chunks generados: {len(chunks)}")
 
-# Enviar a Pinecone
+# 📤 Enviar a Pinecone
 print("🔗 Enviando a Pinecone...")
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 vectorstore = PineconeStore.from_documents(chunks, embeddings, index_name=index_name)
